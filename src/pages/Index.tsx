@@ -1,12 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import TopNotificationBar from "@/components/layout/TopNotificationBar";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import HeroBanner from "@/components/home/HeroBanner";
+import CategorySlider from "@/components/home/CategorySlider";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
+import PromotionalBanners from "@/components/home/PromotionalBanners";
+import AllProducts from "@/components/home/AllProducts";
+import CustomerReviews from "@/components/home/CustomerReviews";
+import WhyChooseUs from "@/components/home/WhyChooseUs";
+import Benefits from "@/components/home/Benefits";
+import MoneyBackGuarantee from "@/components/home/MoneyBackGuarantee";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <TopNotificationBar />
+      <Header cartCount={0} />
+      
+      <main className="flex-1">
+        <HeroBanner />
+        <CategorySlider />
+        <FeaturedProducts />
+        <PromotionalBanners />
+        <AllProducts />
+        <CustomerReviews />
+        <WhyChooseUs />
+        <Benefits />
+        <MoneyBackGuarantee />
+      </main>
+
+      <Footer />
     </div>
   );
 };
