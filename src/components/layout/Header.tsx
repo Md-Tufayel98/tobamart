@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, ShoppingCart, User, Menu, X, Phone, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,18 @@ interface HeaderProps {
 }
 
 const Header = ({ cartCount = 0 }: HeaderProps) => {
+  const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+      setIsSearchOpen(false);
+    }
+  };
 
   const navLinks = [
     { name: "হোম", href: "/" },
@@ -99,7 +109,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
           {/* Search & Actions */}
           <div className="flex items-center gap-2">
             {/* Search - Desktop */}
-            <div className="hidden lg:flex items-center relative">
+            <form onSubmit={handleSearch} className="hidden lg:flex items-center relative">
               <Input
                 type="search"
                 placeholder="পণ্য খুঁজুন..."
@@ -107,8 +117,10 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Search className="absolute right-3 h-4 w-4 text-muted-foreground" />
-            </div>
+              <button type="submit" className="absolute right-3">
+                <Search className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+              </button>
+            </form>
 
             {/* Search - Mobile */}
             <Button
@@ -143,7 +155,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
 
         {/* Mobile Search Bar */}
         {isSearchOpen && (
-          <div className="lg:hidden pb-4 animate-slide-in-up">
+          <form onSubmit={handleSearch} className="lg:hidden pb-4 animate-slide-in-up">
             <div className="relative">
               <Input
                 type="search"
@@ -153,9 +165,11 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Search className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+              </button>
             </div>
-          </div>
+          </form>
         )}
       </div>
     </header>

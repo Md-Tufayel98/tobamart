@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Filter, Grid3X3, List, ChevronDown } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Filter, Grid3X3, List, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -33,12 +34,14 @@ interface Product {
 
 const Shop = () => {
   const { getItemCount } = useCart();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
   useEffect(() => {
     fetchData();
@@ -70,9 +73,15 @@ const Shop = () => {
   };
 
   const filteredProducts = products
-    .filter((product) =>
-      selectedCategories.length === 0 || (product.category_id && selectedCategories.includes(product.category_id))
-    )
+    .filter((product) => {
+      // Search filter
+      const matchesSearch = searchQuery.trim() === "" || 
+        product.name_bn.toLowerCase().includes(searchQuery.toLowerCase());
+      // Category filter
+      const matchesCategory = selectedCategories.length === 0 || 
+        (product.category_id && selectedCategories.includes(product.category_id));
+      return matchesSearch && matchesCategory;
+    })
     .sort((a, b) => {
       switch (sortBy) {
         case "price-low":
@@ -128,14 +137,39 @@ const Shop = () => {
 
       <main className="flex-1 py-6 md:py-10">
         <div className="container">
-          {/* Header */}
+          {/* Header & Search */}
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
               সকল পণ্য
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               আমাদের সংগ্রহ থেকে আপনার পছন্দের পণ্য বেছে নিন
             </p>
+            
+            {/* Search Input */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="পণ্য খুঁজুন..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10 bg-card"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-muted-foreground mt-2">
+                "{searchQuery}" এর জন্য {filteredProducts.length}টি ফলাফল
+              </p>
+            )}
           </div>
 
           {/* Category Pills */}
