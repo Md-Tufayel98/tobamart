@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ShoppingCart, Phone, MapPin, Clock, Eye, Trash2, RefreshCw, ArrowRightLeft, TrendingUp, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,14 +166,34 @@ const AdminIncompleteOrders = () => {
     setConvertDialogOpen(true);
   };
 
-  const handleOrderDialogClose = async (open: boolean) => {
+  const handleOrderDialogClose = (open: boolean) => {
     setConvertDialogOpen(open);
-    if (!open && orderToConvert) {
-      // Check if an order was just created - we'll mark the incomplete order as converted
-      // This is a simple approach - in a real app you might want to pass the order ID back
+    if (!open) {
       setOrderToConvert(null);
     }
   };
+
+  // Called when an order is successfully converted
+  const handleOrderConverted = useCallback((incompleteOrderId: string, newOrderId: string) => {
+    // Optimistically remove from the orders list
+    setOrders(prev => prev.filter(o => o.id !== incompleteOrderId));
+    
+    // Update allOrders to reflect the conversion for stats
+    setAllOrders(prev => prev.map(o => 
+      o.id === incompleteOrderId 
+        ? { ...o, is_converted: true, converted_order_id: newOrderId }
+        : o
+    ));
+    
+    toast({
+      title: "অর্ডার সফলভাবে রূপান্তরিত",
+      description: "অর্ডার লিস্টে দেখুন",
+    });
+    
+    // Close dialog
+    setConvertDialogOpen(false);
+    setOrderToConvert(null);
+  }, [toast]);
 
   // Create pre-filled order data for conversion
   const getConversionOrderData = (incompleteOrder: IncompleteOrder) => {
@@ -534,6 +554,7 @@ const AdminIncompleteOrders = () => {
         onOpenChange={handleOrderDialogClose}
         prefilledData={orderToConvert ? getConversionOrderData(orderToConvert) : undefined}
         incompleteOrderId={orderToConvert?.id}
+        onConverted={handleOrderConverted}
       />
     </div>
   );

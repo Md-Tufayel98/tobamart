@@ -45,9 +45,10 @@ interface OrderDialogProps {
   order?: any;
   incompleteOrderId?: string;
   prefilledData?: PrefilledOrderData;
+  onConverted?: (incompleteOrderId: string, newOrderId: string) => void;
 }
 
-export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId, prefilledData }: OrderDialogProps) => {
+export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId, prefilledData, onConverted }: OrderDialogProps) => {
   const queryClient = useQueryClient();
   const { data: products } = useProducts();
   const { data: deliveryZones } = useDeliveryZones();
@@ -221,16 +222,24 @@ export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId, pref
 
         // If this was a conversion from incomplete order, mark it as converted
         if (incompleteOrderId) {
-          await supabase
+          const { error: conversionError } = await supabase
             .from("incomplete_orders")
             .update({ 
               is_converted: true, 
               converted_order_id: newOrder.id 
             })
             .eq("id", incompleteOrderId);
+          
+          if (conversionError) {
+            console.error("Failed to mark incomplete order as converted:", conversionError);
+            toast.error("অর্ডার তৈরি হয়েছে, কিন্তু রূপান্তর মার্ক করতে সমস্যা হয়েছে");
+          } else {
+            // Notify parent component of successful conversion
+            onConverted?.(incompleteOrderId, newOrder.id);
+          }
         }
 
-        toast.success("অর্ডার তৈরি হয়েছে");
+        toast.success(`অর্ডার তৈরি হয়েছে - ${newOrder.order_number}`);
       }
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       onOpenChange(false);
