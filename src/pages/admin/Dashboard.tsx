@@ -4,16 +4,15 @@ import {
   Package,
   Users,
   TrendingUp,
-  ArrowUp,
   Clock,
   AlertTriangle,
   MessageCircle,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useDashboardStats } from "@/hooks/useAdminData";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import SalesAnalyticsWidget from "@/components/admin/widgets/SalesAnalyticsWidget";
 const AdminDashboard = () => {
   const { data: stats, isLoading } = useDashboardStats();
 
@@ -184,6 +183,15 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Sales Analytics Widget */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          বিক্রি ও রূপান্তর বিশ্লেষণ
+        </h2>
+        <SalesAnalyticsWidget />
       </div>
 
       {/* Quick Links */}
