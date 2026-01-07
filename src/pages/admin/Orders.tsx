@@ -60,6 +60,8 @@ import {
 import { useOrders, useUpdateOrder } from "@/hooks/useAdminData";
 import { useSendToSteadfast, useSteadfastBalance, useCheckSteadfastStatus } from "@/hooks/useSteadfast";
 import { useCourierCheck, type ParsedCourierResult } from "@/hooks/useBDCourier";
+import { normalizeBDPhone } from "@/lib/phone";
+import { getFraudCached, setFraudCached, loadFraudCache, clearFraudCache } from "@/lib/bdcourierCache";
 import { OrderDialog } from "@/components/admin/dialogs/OrderDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -103,9 +105,10 @@ const AdminOrders = () => {
   const [fraudCheckResult, setFraudCheckResult] = useState<ParsedCourierResult | null>(null);
   const [fraudCheckPhone, setFraudCheckPhone] = useState("");
   const [fraudDialogOpen, setFraudDialogOpen] = useState(false);
+  const [currentFraudRequestId, setCurrentFraudRequestId] = useState(0);
 
-  // Cached risk data for each phone number
-  const [riskCache, setRiskCache] = useState<Record<string, ParsedCourierResult>>({});
+  // Cached risk data for each phone number (normalized) - initialize from sessionStorage
+  const [riskCache, setRiskCache] = useState<Record<string, ParsedCourierResult>>(() => loadFraudCache());
 
   // Confirmation warning state
   const [confirmWarningOpen, setConfirmWarningOpen] = useState(false);
@@ -127,14 +130,26 @@ const AdminOrders = () => {
   const checkStatus = useCheckSteadfastStatus();
   const courierCheck = useCourierCheck();
 
-  // Background check for visible orders
+  // Background check for visible orders - uses normalized phone
   const checkRiskForPhone = useCallback(async (phone: string) => {
-    if (!phone || riskCache[phone]) return;
+    const normalized = normalizeBDPhone(phone);
+    if (!normalized) return;
+    
+    // Check sessionStorage cache first
+    const cached = getFraudCached(normalized);
+    if (cached) {
+      setRiskCache(prev => ({ ...prev, [normalized]: cached }));
+      return;
+    }
+    
+    // Already in memory cache
+    if (riskCache[normalized]) return;
     
     try {
       const result = await courierCheck.mutateAsync(phone);
-      setRiskCache(prev => ({ ...prev, [phone]: result }));
-    } catch (error) {
+      setFraudCached(normalized, result);
+      setRiskCache(prev => ({ ...prev, [normalized]: result }));
+    } catch {
       // Silently fail for background checks
     }
   }, [riskCache, courierCheck]);
@@ -145,7 +160,8 @@ const AdminOrders = () => {
       const uniquePhones = [...new Set(orders.map((o: any) => o.customer_phone).filter(Boolean))];
       // Check first 10 phones to avoid rate limiting
       uniquePhones.slice(0, 10).forEach(phone => {
-        if (!riskCache[phone]) {
+        const normalized = normalizeBDPhone(phone);
+        if (normalized && !riskCache[normalized] && !getFraudCached(normalized)) {
           checkRiskForPhone(phone);
         }
       });
@@ -153,16 +169,37 @@ const AdminOrders = () => {
   }, [orders]);
 
   const handleFraudCheck = async (phone: string) => {
-    setFraudCheckPhone(phone);
-    setFraudCheckResult(null);
+    const normalized = normalizeBDPhone(phone);
+    if (!normalized) {
+      toast.error("সঠিক ফোন নম্বর নয়");
+      return;
+    }
+    
+    // Generate request ID to prevent race conditions
+    const requestId = Date.now();
+    setCurrentFraudRequestId(requestId);
+    setFraudCheckPhone(normalized);
     setFraudDialogOpen(true);
     
+    // Check cache first
+    const cached = getFraudCached(normalized);
+    if (cached) {
+      setFraudCheckResult(cached);
+      return;
+    }
+    
+    setFraudCheckResult(null);
+    
     try {
-      const result = await courierCheck.mutateAsync(phone);
-      setFraudCheckResult(result);
-      // Update cache
-      setRiskCache(prev => ({ ...prev, [phone]: result }));
-    } catch (error) {
+      const result = await courierCheck.mutateAsync(normalized);
+      
+      // Only update if this is still the latest request
+      if (requestId === currentFraudRequestId || requestId >= currentFraudRequestId) {
+        setFraudCheckResult(result);
+        setFraudCached(normalized, result);
+        setRiskCache(prev => ({ ...prev, [normalized]: result }));
+      }
+    } catch {
       // Error is handled in the hook
     }
   };
@@ -255,13 +292,23 @@ const AdminOrders = () => {
   const handleStatusChange = async (id: string, order_status: string, order?: any) => {
     // If confirming, check fraud first
     if (order_status === "confirmed" && order) {
+      const normalized = normalizeBDPhone(order.customer_phone);
+      
       setIsCheckingForConfirm(true);
       setPendingConfirmOrder({ id, order });
       setConfirmFraudResult(null);
 
       try {
-        const result = await courierCheck.mutateAsync(order.customer_phone);
-        setRiskCache(prev => ({ ...prev, [order.customer_phone]: result }));
+        // Check cache first
+        let result = normalized ? getFraudCached(normalized) : null;
+        
+        if (!result) {
+          result = await courierCheck.mutateAsync(order.customer_phone);
+          if (normalized) {
+            setFraudCached(normalized, result);
+            setRiskCache(prev => ({ ...prev, [normalized]: result! }));
+          }
+        }
 
         // Check if we should warn (success rate < 70% or cancelled > 5)
         if (
@@ -275,7 +322,7 @@ const AdminOrders = () => {
           setIsCheckingForConfirm(false);
           return;
         }
-      } catch (error) {
+      } catch {
         // If check fails, proceed anyway
       }
       
@@ -516,7 +563,8 @@ const AdminOrders = () => {
               filteredOrders.map((order: any) => {
                 const isEligible = !order.steadfast_consignment_id && 
                   !["delivered", "cancelled", "refunded"].includes(order.order_status);
-                const cachedRisk = riskCache[order.customer_phone];
+                const normalized = normalizeBDPhone(order.customer_phone);
+                const cachedRisk = normalized ? riskCache[normalized] : null;
                 const riskBadge = getRiskBadgeFromResult(cachedRisk);
                 
                 return (
