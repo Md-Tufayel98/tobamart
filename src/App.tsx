@@ -23,6 +23,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 import ReturnPolicy from "./pages/ReturnPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import Terms from "./pages/Terms";
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:id" element={<BlogDetail />} />
               <Route path="/return-policy" element={<ReturnPolicy />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
               <Route path="/terms" element={<Terms />} />

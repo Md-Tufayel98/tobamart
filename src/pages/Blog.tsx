@@ -96,10 +96,12 @@ const Blog = () => {
                     {post.title}
                   </h2>
                   <p className="text-muted-foreground mb-4">{post.excerpt}</p>
-                  <Button variant="link" className="p-0 h-auto gap-2">
-                    আরো পড়ুন
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <Link to={`/blog/${post.id}`}>
+                    <Button variant="link" className="p-0 h-auto gap-2">
+                      আরো পড়ুন
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
               </article>
             ))}
