@@ -388,6 +388,68 @@ export type Database = {
         }
         Relationships: []
       }
+      incomplete_orders: {
+        Row: {
+          cart_data: Json | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          delivery_zone_id: string | null
+          id: string
+          is_converted: boolean | null
+          last_updated_at: string
+          notes: string | null
+          session_id: string | null
+          shipping_address: string | null
+          shipping_area: string | null
+          shipping_city: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cart_data?: Json | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_zone_id?: string | null
+          id?: string
+          is_converted?: boolean | null
+          last_updated_at?: string
+          notes?: string | null
+          session_id?: string | null
+          shipping_address?: string | null
+          shipping_area?: string | null
+          shipping_city?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cart_data?: Json | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          delivery_zone_id?: string | null
+          id?: string
+          is_converted?: boolean | null
+          last_updated_at?: string
+          notes?: string | null
+          session_id?: string | null
+          shipping_address?: string | null
+          shipping_area?: string | null
+          shipping_city?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incomplete_orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
