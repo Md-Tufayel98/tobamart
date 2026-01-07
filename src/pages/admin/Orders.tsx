@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Filter,
@@ -10,11 +10,14 @@ import {
   Loader2,
   Wallet,
   ShieldCheck,
+  Link,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -42,15 +45,52 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useOrders, useUpdateOrder } from "@/hooks/useAdminData";
 import { useSendToSteadfast, useSteadfastBalance, useCheckSteadfastStatus } from "@/hooks/useSteadfast";
-import { useCourierCheck } from "@/hooks/useBDCourier";
+import { useCourierCheck, type ParsedCourierResult } from "@/hooks/useBDCourier";
 import { OrderDialog } from "@/components/admin/dialogs/OrderDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
 import { toast } from "sonner";
+import { createChargeClientSide } from "@/lib/uddoktapay";
+
+// Risk badge component for cached fraud data
+interface RiskBadge {
+  label: string;
+  className: string;
+}
+
+const getRiskBadgeFromResult = (result: ParsedCourierResult | null): RiskBadge => {
+  if (!result || result.status !== "success" || !result.summary) {
+    return { label: "নতুন", className: "bg-gray-100 text-gray-600" };
+  }
+  
+  if (result.summary.total_parcel === 0) {
+    return { label: "নতুন", className: "bg-gray-100 text-gray-600" };
+  }
+  
+  const rate = result.summary.success_ratio;
+  if (rate >= 80) {
+    return { label: "নিরাপদ", className: "bg-green-100 text-green-700" };
+  } else if (rate >= 50) {
+    return { label: "সতর্ক", className: "bg-yellow-100 text-yellow-700" };
+  } else {
+    return { label: "ঝুঁকিপূর্ণ", className: "bg-red-100 text-red-700" };
+  }
+};
 
 const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState("all");
@@ -60,9 +100,25 @@ const AdminOrders = () => {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [isBulkSending, setIsBulkSending] = useState(false);
 
-  const [fraudCheckResult, setFraudCheckResult] = useState<any>(null);
+  const [fraudCheckResult, setFraudCheckResult] = useState<ParsedCourierResult | null>(null);
   const [fraudCheckPhone, setFraudCheckPhone] = useState("");
   const [fraudDialogOpen, setFraudDialogOpen] = useState(false);
+
+  // Cached risk data for each phone number
+  const [riskCache, setRiskCache] = useState<Record<string, ParsedCourierResult>>({});
+
+  // Confirmation warning state
+  const [confirmWarningOpen, setConfirmWarningOpen] = useState(false);
+  const [pendingConfirmOrder, setPendingConfirmOrder] = useState<any>(null);
+  const [confirmFraudResult, setConfirmFraudResult] = useState<ParsedCourierResult | null>(null);
+  const [isCheckingForConfirm, setIsCheckingForConfirm] = useState(false);
+
+  // Payment link dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [isGeneratingPaymentLink, setIsGeneratingPaymentLink] = useState(false);
+  const [generatedPaymentUrl, setGeneratedPaymentUrl] = useState("");
 
   const { data: orders, isLoading } = useOrders();
   const updateOrder = useUpdateOrder();
@@ -70,6 +126,31 @@ const AdminOrders = () => {
   const { data: steadfastBalance } = useSteadfastBalance();
   const checkStatus = useCheckSteadfastStatus();
   const courierCheck = useCourierCheck();
+
+  // Background check for visible orders
+  const checkRiskForPhone = useCallback(async (phone: string) => {
+    if (!phone || riskCache[phone]) return;
+    
+    try {
+      const result = await courierCheck.mutateAsync(phone);
+      setRiskCache(prev => ({ ...prev, [phone]: result }));
+    } catch (error) {
+      // Silently fail for background checks
+    }
+  }, [riskCache, courierCheck]);
+
+  // Check risk for all visible orders on load
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      const uniquePhones = [...new Set(orders.map((o: any) => o.customer_phone).filter(Boolean))];
+      // Check first 10 phones to avoid rate limiting
+      uniquePhones.slice(0, 10).forEach(phone => {
+        if (!riskCache[phone]) {
+          checkRiskForPhone(phone);
+        }
+      });
+    }
+  }, [orders]);
 
   const handleFraudCheck = async (phone: string) => {
     setFraudCheckPhone(phone);
@@ -79,6 +160,8 @@ const AdminOrders = () => {
     try {
       const result = await courierCheck.mutateAsync(phone);
       setFraudCheckResult(result);
+      // Update cache
+      setRiskCache(prev => ({ ...prev, [phone]: result }));
     } catch (error) {
       // Error is handled in the hook
     }
@@ -169,8 +252,49 @@ const AdminOrders = () => {
     setDialogOpen(true);
   };
 
-  const handleStatusChange = async (id: string, order_status: string) => {
+  const handleStatusChange = async (id: string, order_status: string, order?: any) => {
+    // If confirming, check fraud first
+    if (order_status === "confirmed" && order) {
+      setIsCheckingForConfirm(true);
+      setPendingConfirmOrder({ id, order });
+      setConfirmFraudResult(null);
+
+      try {
+        const result = await courierCheck.mutateAsync(order.customer_phone);
+        setRiskCache(prev => ({ ...prev, [order.customer_phone]: result }));
+
+        // Check if we should warn (success rate < 70% or cancelled > 5)
+        if (
+          result.status === "success" && 
+          result.summary && 
+          result.summary.total_parcel > 0 &&
+          (result.summary.success_ratio < 70 || result.summary.cancelled_parcel > 5)
+        ) {
+          setConfirmFraudResult(result);
+          setConfirmWarningOpen(true);
+          setIsCheckingForConfirm(false);
+          return;
+        }
+      } catch (error) {
+        // If check fails, proceed anyway
+      }
+      
+      setIsCheckingForConfirm(false);
+    }
+
     await updateOrder.mutateAsync({ id, order_status });
+  };
+
+  const handleProceedConfirmAnyway = async () => {
+    if (pendingConfirmOrder) {
+      await updateOrder.mutateAsync({ 
+        id: pendingConfirmOrder.id, 
+        order_status: "confirmed" 
+      });
+    }
+    setConfirmWarningOpen(false);
+    setPendingConfirmOrder(null);
+    setConfirmFraudResult(null);
   };
 
   const handleSendToSteadfast = async (order: any) => {
@@ -226,6 +350,62 @@ const AdminOrders = () => {
     if (result.success) {
       toast.info(`ডেলিভারি স্ট্যাটাস: ${result.delivery_status}`);
     }
+  };
+
+  // Payment link generation
+  const handleOpenPaymentDialog = (order: any) => {
+    setPaymentOrder(order);
+    // Default to delivery charge or 10% of total
+    const defaultAmount = order.delivery_charge || Math.round(order.total_amount * 0.1);
+    setPaymentAmount(defaultAmount.toString());
+    setGeneratedPaymentUrl("");
+    setPaymentDialogOpen(true);
+  };
+
+  const handleGeneratePaymentLink = async () => {
+    if (!paymentOrder || !paymentAmount) return;
+
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("সঠিক পরিমাণ লিখুন");
+      return;
+    }
+
+    setIsGeneratingPaymentLink(true);
+
+    try {
+      const baseUrl = window.location.origin;
+      const result = await createChargeClientSide({
+        full_name: paymentOrder.customer_name,
+        email: paymentOrder.customer_email || "customer@example.com",
+        amount,
+        metadata: {
+          order_id: paymentOrder.id,
+          order_number: paymentOrder.order_number,
+          payment_type: "partial",
+        },
+        redirect_url: `${baseUrl}/payment-success?orderId=${paymentOrder.id}`,
+        cancel_url: `${baseUrl}/order-confirmation?orderId=${paymentOrder.id}`,
+        webhook_url: `${baseUrl}/api/payment-webhook`,
+      });
+
+      if (result.status === true && result.payment_url) {
+        setGeneratedPaymentUrl(result.payment_url);
+        toast.success("পেমেন্ট লিংক তৈরি হয়েছে");
+      } else {
+        toast.error(result.message || "পেমেন্ট লিংক তৈরি করতে ব্যর্থ");
+      }
+    } catch (error) {
+      console.error("Payment link error:", error);
+      toast.error("পেমেন্ট লিংক তৈরি করতে সমস্যা হয়েছে");
+    } finally {
+      setIsGeneratingPaymentLink(false);
+    }
+  };
+
+  const handleCopyPaymentLink = () => {
+    navigator.clipboard.writeText(generatedPaymentUrl);
+    toast.success("লিংক কপি হয়েছে");
   };
 
   if (isLoading) {
@@ -341,6 +521,8 @@ const AdminOrders = () => {
               filteredOrders.map((order: any) => {
                 const isEligible = !order.steadfast_consignment_id && 
                   !["delivered", "cancelled", "refunded"].includes(order.order_status);
+                const cachedRisk = riskCache[order.customer_phone];
+                const riskBadge = getRiskBadgeFromResult(cachedRisk);
                 
                 return (
                   <TableRow key={order.id}>
@@ -359,7 +541,13 @@ const AdminOrders = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div>
-                          <p className="font-medium">{order.customer_name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{order.customer_name}</p>
+                            {/* Risk Badge */}
+                            <Badge className={`text-xs ${riskBadge.className}`}>
+                              {riskBadge.label}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">{order.customer_phone}</p>
                         </div>
                         <Button
@@ -419,7 +607,21 @@ const AdminOrders = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-center">
-                      {getPaymentBadge(order.payment_status)}
+                      <div className="flex flex-col items-center gap-1">
+                        {getPaymentBadge(order.payment_status)}
+                        {/* Payment link button for unpaid/partial orders */}
+                        {(order.payment_status === "unpaid" || order.payment_status === "partial") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs gap-1"
+                            onClick={() => handleOpenPaymentDialog(order)}
+                          >
+                            <Link className="h-3 w-3" />
+                            পেমেন্ট লিংক
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center text-sm">
                       {format(new Date(order.created_at), "dd MMM, yyyy", { locale: bn })}
@@ -437,7 +639,13 @@ const AdminOrders = () => {
                             বিস্তারিত / এডিট
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusChange(order.id, "confirmed")}>
+                          <DropdownMenuItem 
+                            onClick={() => handleStatusChange(order.id, "confirmed", order)}
+                            disabled={isCheckingForConfirm}
+                          >
+                            {isCheckingForConfirm && pendingConfirmOrder?.id === order.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
                             কনফার্ম করুন
                           </DropdownMenuItem>
                           
@@ -604,6 +812,132 @@ const AdminOrders = () => {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Warning Dialog */}
+      <AlertDialog open={confirmWarningOpen} onOpenChange={setConfirmWarningOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-yellow-600">
+              <AlertTriangle className="h-5 w-5" />
+              সতর্কতা: ঝুঁকিপূর্ণ কাস্টমার
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>এই কাস্টমারের কুরিয়ার হিস্ট্রি ঝুঁকিপূর্ণ মনে হচ্ছে:</p>
+              
+              {confirmFraudResult?.summary && (
+                <div className="grid grid-cols-3 gap-2 text-center mt-2">
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-bold text-blue-700">{confirmFraudResult.summary.total_parcel}</p>
+                    <p className="text-xs text-blue-600">মোট</p>
+                  </div>
+                  <div className="p-2 bg-green-50 rounded-lg">
+                    <p className="text-sm font-bold text-green-700">{confirmFraudResult.summary.success_parcel}</p>
+                    <p className="text-xs text-green-600">সফল</p>
+                  </div>
+                  <div className="p-2 bg-red-50 rounded-lg">
+                    <p className="text-sm font-bold text-red-700">{confirmFraudResult.summary.cancelled_parcel}</p>
+                    <p className="text-xs text-red-600">বাতিল</p>
+                  </div>
+                </div>
+              )}
+
+              {confirmFraudResult?.summary && (
+                <div className={`p-2 rounded-lg text-center ${
+                  confirmFraudResult.summary.success_ratio < 50 
+                    ? "bg-red-100 text-red-700" 
+                    : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  সাকসেস রেট: {confirmFraudResult.summary.success_ratio}%
+                </div>
+              )}
+
+              <p className="text-sm">আপনি কি তবুও এই অর্ডার কনফার্ম করতে চান?</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setConfirmWarningOpen(false);
+              setPendingConfirmOrder(null);
+              setConfirmFraudResult(null);
+            }}>
+              বাতিল করুন
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleProceedConfirmAnyway}
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              এগিয়ে যান
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Payment Link Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link className="h-5 w-5 text-primary" />
+              পেমেন্ট লিংক তৈরি করুন
+            </DialogTitle>
+          </DialogHeader>
+          {paymentOrder && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">অর্ডার</p>
+                <p className="font-medium">{paymentOrder.order_number} - {paymentOrder.customer_name}</p>
+                <p className="text-sm text-muted-foreground">মোট: ৳{Number(paymentOrder.total_amount).toLocaleString()}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payment-amount">পেমেন্ট পরিমাণ (৳)</Label>
+                <Input
+                  id="payment-amount"
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="পরিমাণ লিখুন"
+                />
+              </div>
+
+              {generatedPaymentUrl ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm font-medium text-green-700 mb-2">✅ পেমেন্ট লিংক তৈরি হয়েছে</p>
+                    <p className="text-xs text-green-600 break-all">{generatedPaymentUrl}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleCopyPaymentLink} className="flex-1">
+                      কপি করুন
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.open(generatedPaymentUrl, "_blank")}
+                      className="flex-1"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      খুলুন
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button 
+                  onClick={handleGeneratePaymentLink} 
+                  className="w-full"
+                  disabled={isGeneratingPaymentLink}
+                >
+                  {isGeneratingPaymentLink ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Link className="h-4 w-4 mr-2" />
+                  )}
+                  লিংক তৈরি করুন
+                </Button>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

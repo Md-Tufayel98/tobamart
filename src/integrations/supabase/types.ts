@@ -391,6 +391,7 @@ export type Database = {
       incomplete_orders: {
         Row: {
           cart_data: Json | null
+          converted_order_id: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -408,6 +409,7 @@ export type Database = {
         }
         Insert: {
           cart_data?: Json | null
+          converted_order_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -425,6 +427,7 @@ export type Database = {
         }
         Update: {
           cart_data?: Json | null
+          converted_order_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -441,6 +444,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "incomplete_orders_converted_order_id_fkey"
+            columns: ["converted_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "incomplete_orders_delivery_zone_id_fkey"
             columns: ["delivery_zone_id"]
