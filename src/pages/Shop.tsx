@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useParams } from "react-router-dom";
 import { Filter, Grid3X3, List, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ interface Product {
 
 const Shop = () => {
   const { getItemCount } = useCart();
+  const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -45,6 +46,16 @@ const Shop = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle URL category slug
+  useEffect(() => {
+    if (slug && categories.length > 0) {
+      const category = categories.find(c => c.slug === slug);
+      if (category) {
+        setSelectedCategories([category.id]);
+      }
+    }
+  }, [slug, categories]);
 
   const fetchData = async () => {
     setLoading(true);

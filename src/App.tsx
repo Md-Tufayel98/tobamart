@@ -18,6 +18,13 @@ import OrderTracking from "./pages/OrderTracking";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import Blog from "./pages/Blog";
+import ReturnPolicy from "./pages/ReturnPolicy";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 // Admin
@@ -65,6 +72,14 @@ const App = () => (
               <Route path="/track-order" element={<OrderTracking />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/return-policy" element={<ReturnPolicy />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/auth" element={<Auth />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>

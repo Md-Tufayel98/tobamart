@@ -16,7 +16,7 @@ const PromotionalBanners = () => {
       title_bn: "মসলা কালেকশন",
       subtitle_bn: "খাঁটি দেশি মসলা",
       image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&h=300&fit=crop",
-      link_url: "/category/spices",
+      link_url: "/category/masala",
       bg_color: "from-red-500/90 to-rose-600/90",
     },
   ];

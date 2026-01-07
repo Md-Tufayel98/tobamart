@@ -52,7 +52,7 @@ const Footer = () => {
             <h3 className="font-semibold text-foreground mb-4">দ্রুত লিংক</h3>
             <ul className="space-y-2.5">
               {[
-                { name: "সকল পণ্য", href: "/products" },
+                { name: "সকল পণ্য", href: "/shop" },
                 { name: "আমাদের সম্পর্কে", href: "/about" },
                 { name: "যোগাযোগ", href: "/contact" },
                 { name: "ব্লগ", href: "/blog" },
@@ -75,10 +75,10 @@ const Footer = () => {
             <h3 className="font-semibold text-foreground mb-4">গ্রাহক সেবা</h3>
             <ul className="space-y-2.5">
               {[
-                { name: "আমার অর্ডার", href: "/account/orders" },
+                { name: "আমার অর্ডার", href: "/account" },
+                { name: "অর্ডার ট্র্যাকিং", href: "/track-order" },
                 { name: "রিটার্ন পলিসি", href: "/return-policy" },
                 { name: "শিপিং পলিসি", href: "/shipping-policy" },
-                { name: "প্রাইভেসি পলিসি", href: "/privacy-policy" },
                 { name: "টার্মস & কন্ডিশন", href: "/terms" },
               ].map((link) => (
                 <li key={link.href}>
