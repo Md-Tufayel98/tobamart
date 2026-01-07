@@ -241,7 +241,9 @@ const AdminOrders = () => {
                       <div className="flex flex-col items-center gap-1">
                         {getSteadfastBadge(order.steadfast_status)}
                         <a
-                          href={`https://portal.steadfast.com.bd/consignment/tracking/${order.steadfast_consignment_id}`}
+                          href={order.steadfast_tracking_code 
+                            ? `https://steadfast.com.bd/t/${order.steadfast_tracking_code}`
+                            : `https://steadfast.com.bd/t/${order.steadfast_consignment_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline flex items-center gap-1"
@@ -251,7 +253,25 @@ const AdminOrders = () => {
                         </a>
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      // Show Send to Steadfast button if not yet sent
+                      !["delivered", "cancelled", "refunded"].includes(order.order_status) ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 text-xs"
+                          onClick={() => handleSendToSteadfast(order)}
+                          disabled={sendToSteadfast.isPending}
+                        >
+                          {sendToSteadfast.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Truck className="h-3 w-3" />
+                          )}
+                          পাঠান
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )
                     )}
                   </TableCell>
                   <TableCell className="text-center">

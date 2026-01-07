@@ -576,6 +576,7 @@ export type Database = {
           shipping_postal_code: string | null
           steadfast_consignment_id: string | null
           steadfast_status: string | null
+          steadfast_tracking_code: string | null
           subtotal: number
           total_amount: number
           transaction_id: string | null
@@ -605,6 +606,7 @@ export type Database = {
           shipping_postal_code?: string | null
           steadfast_consignment_id?: string | null
           steadfast_status?: string | null
+          steadfast_tracking_code?: string | null
           subtotal: number
           total_amount: number
           transaction_id?: string | null
@@ -634,6 +636,7 @@ export type Database = {
           shipping_postal_code?: string | null
           steadfast_consignment_id?: string | null
           steadfast_status?: string | null
+          steadfast_tracking_code?: string | null
           subtotal?: number
           total_amount?: number
           transaction_id?: string | null

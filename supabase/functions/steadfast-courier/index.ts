@@ -6,7 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const STEADFAST_API_URL = "https://portal.steadfast.com.bd/api/v1";
+// Correct Steadfast API URL from their official docs
+const STEADFAST_API_URL = "https://portal.packzy.com/api/v1";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -36,6 +37,7 @@ serve(async (req) => {
       "Api-Key": apiKey,
       "Secret-Key": secretKey,
       "Content-Type": "application/json",
+      "Accept": "application/json",
     };
 
     // Helper function to safely parse API response
@@ -51,6 +53,27 @@ serve(async (req) => {
       }
     };
 
+    // Helper function to normalize phone number to 11 digits
+    const normalizePhone = (phone: string): string => {
+      const digitsOnly = phone.replace(/\D/g, "");
+      // If starts with 88 and has 13 digits, remove the 88 prefix
+      if (digitsOnly.startsWith("88") && digitsOnly.length === 13) {
+        return digitsOnly.slice(2);
+      }
+      // If already 11 digits, return as is
+      if (digitsOnly.length === 11) {
+        return digitsOnly;
+      }
+      // Return what we have and let Steadfast validate
+      return digitsOnly;
+    };
+
+    // Helper function to sanitize invoice number
+    const sanitizeInvoice = (orderNumber: string): string => {
+      // Remove non-alphanumeric characters and add INV prefix
+      return "INV" + orderNumber.replace(/[^a-zA-Z0-9]/g, "");
+    };
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -61,6 +84,15 @@ serve(async (req) => {
         if (!order) {
           return new Response(
             JSON.stringify({ error: "Order data is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Normalize and validate phone number
+        const normalizedPhone = normalizePhone(order.customer_phone);
+        if (normalizedPhone.length !== 11) {
+          return new Response(
+            JSON.stringify({ error: `Invalid phone number. Steadfast requires 11 digits. Got: ${normalizedPhone.length} digits` }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -78,9 +110,9 @@ serve(async (req) => {
           : 0;
 
         const payload = {
-          invoice: order.order_number,
+          invoice: sanitizeInvoice(order.order_number),
           recipient_name: order.customer_name,
-          recipient_phone: order.customer_phone,
+          recipient_phone: normalizedPhone,
           recipient_address: fullAddress,
           cod_amount: codAmount,
           note: order.notes || "",
@@ -103,6 +135,7 @@ serve(async (req) => {
             .from("orders")
             .update({
               steadfast_consignment_id: result.consignment.consignment_id,
+              steadfast_tracking_code: result.consignment.tracking_code,
               steadfast_status: result.consignment.status || "pending",
               courier_sent_at: new Date().toISOString(),
               order_status: "shipped",
@@ -120,7 +153,7 @@ serve(async (req) => {
             courier_name: "Steadfast Courier",
             tracking_number: result.consignment.consignment_id,
             tracking_url: `https://steadfast.com.bd/t/${result.consignment.tracking_code}`,
-            notes: `Steadfast consignment created. Invoice: ${order.order_number}`,
+            notes: `Steadfast consignment created. Invoice: ${payload.invoice}`,
           });
 
           return new Response(
