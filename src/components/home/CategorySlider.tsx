@@ -2,68 +2,26 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Category {
-  id: string;
-  name_bn: string;
-  slug: string;
-  image_url?: string;
-}
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CategorySlider = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Demo categories - will be replaced with Supabase data
-  const categories: Category[] = [
-    {
-      id: "1",
-      name_bn: "মধু",
-      slug: "honey",
-      image_url: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=200&h=200&fit=crop",
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['categories-slider'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
     },
-    {
-      id: "2",
-      name_bn: "ঘি",
-      slug: "ghee",
-      image_url: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=200&h=200&fit=crop",
-    },
-    {
-      id: "3",
-      name_bn: "চাল",
-      slug: "rice",
-      image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop",
-    },
-    {
-      id: "4",
-      name_bn: "তেল",
-      slug: "oil",
-      image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=200&h=200&fit=crop",
-    },
-    {
-      id: "5",
-      name_bn: "মসলা",
-      slug: "spices",
-      image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=200&h=200&fit=crop",
-    },
-    {
-      id: "6",
-      name_bn: "ড্রাই ফ্রুটস",
-      slug: "dry-fruits",
-      image_url: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=200&h=200&fit=crop",
-    },
-    {
-      id: "7",
-      name_bn: "চা",
-      slug: "tea",
-      image_url: "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=200&h=200&fit=crop",
-    },
-    {
-      id: "8",
-      name_bn: "গুড়",
-      slug: "jaggery",
-      image_url: "https://images.unsplash.com/photo-1605197788044-5a55a8e16b96?w=200&h=200&fit=crop",
-    },
-  ];
+  });
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -74,6 +32,34 @@ const CategorySlider = () => {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <section className="py-8 md:py-12 bg-muted/30">
+        <div className="container">
+          <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-7 w-24" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
+          </div>
+          <div className="flex gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex-shrink-0 flex flex-col items-center gap-2">
+                <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (categories.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-8 md:py-12 bg-muted/30">

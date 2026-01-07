@@ -1,145 +1,26 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "./ProductCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const AllProducts = () => {
   const [visibleCount, setVisibleCount] = useState(8);
 
-  // Demo products - will be replaced with Supabase data
-  const allProducts = [
-    {
-      id: "1",
-      name_bn: "সুন্দরবনের খাঁটি মধু",
-      slug: "sundarban-pure-honey",
-      image_url: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=400&fit=crop",
-      base_price: 850,
-      sale_price: 750,
-      rating: 4.8,
-      reviews_count: 124,
-      stock_quantity: 50,
+  const { data: allProducts = [], isLoading } = useQuery({
+    queryKey: ['all-products-home'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     },
-    {
-      id: "2",
-      name_bn: "খাঁটি গাওয়া ঘি",
-      slug: "pure-deshi-ghee",
-      image_url: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&h=400&fit=crop",
-      base_price: 1200,
-      sale_price: null,
-      rating: 4.9,
-      reviews_count: 89,
-      stock_quantity: 30,
-    },
-    {
-      id: "3",
-      name_bn: "কালোজিরা তেল (অর্গানিক)",
-      slug: "organic-black-seed-oil",
-      image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400&fit=crop",
-      base_price: 550,
-      sale_price: 480,
-      rating: 4.7,
-      reviews_count: 56,
-      stock_quantity: 45,
-    },
-    {
-      id: "4",
-      name_bn: "চিনিগুঁড়া চাল (৫ কেজি)",
-      slug: "chinigura-rice-5kg",
-      image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop",
-      base_price: 750,
-      sale_price: null,
-      rating: 4.6,
-      reviews_count: 78,
-      stock_quantity: 100,
-    },
-    {
-      id: "5",
-      name_bn: "সরিষার তেল (১ লিটার)",
-      slug: "mustard-oil-1l",
-      image_url: "https://images.unsplash.com/photo-1620706857370-e1b9770e8bb1?w=400&h=400&fit=crop",
-      base_price: 280,
-      sale_price: null,
-      rating: 4.5,
-      reviews_count: 92,
-      stock_quantity: 80,
-    },
-    {
-      id: "6",
-      name_bn: "মিক্সড ড্রাই ফ্রুটস",
-      slug: "mixed-dry-fruits",
-      image_url: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=400&h=400&fit=crop",
-      base_price: 650,
-      sale_price: 580,
-      rating: 4.7,
-      reviews_count: 45,
-      stock_quantity: 35,
-    },
-    {
-      id: "7",
-      name_bn: "হলুদ গুঁড়া (অর্গানিক)",
-      slug: "organic-turmeric-powder",
-      image_url: "https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=400&h=400&fit=crop",
-      base_price: 180,
-      sale_price: null,
-      rating: 4.6,
-      reviews_count: 67,
-      stock_quantity: 120,
-    },
-    {
-      id: "8",
-      name_bn: "খেজুরের গুড়",
-      slug: "date-palm-jaggery",
-      image_url: "https://images.unsplash.com/photo-1605197788044-5a55a8e16b96?w=400&h=400&fit=crop",
-      base_price: 350,
-      sale_price: 320,
-      rating: 4.8,
-      reviews_count: 38,
-      stock_quantity: 60,
-    },
-    {
-      id: "9",
-      name_bn: "সিলেটি চা পাতা",
-      slug: "sylheti-tea-leaves",
-      image_url: "https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?w=400&h=400&fit=crop",
-      base_price: 420,
-      sale_price: null,
-      rating: 4.5,
-      reviews_count: 52,
-      stock_quantity: 70,
-    },
-    {
-      id: "10",
-      name_bn: "নারকেল তেল (ভার্জিন)",
-      slug: "virgin-coconut-oil",
-      image_url: "https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=400&h=400&fit=crop",
-      base_price: 450,
-      sale_price: 399,
-      rating: 4.7,
-      reviews_count: 84,
-      stock_quantity: 55,
-    },
-    {
-      id: "11",
-      name_bn: "কাঠ বাদাম",
-      slug: "almonds",
-      image_url: "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400&h=400&fit=crop",
-      base_price: 950,
-      sale_price: null,
-      rating: 4.6,
-      reviews_count: 41,
-      stock_quantity: 40,
-    },
-    {
-      id: "12",
-      name_bn: "মরিচ গুঁড়া (ঝাল)",
-      slug: "red-chili-powder",
-      image_url: "https://images.unsplash.com/photo-1599909533681-74cc1f9886d4?w=400&h=400&fit=crop",
-      base_price: 220,
-      sale_price: 199,
-      rating: 4.4,
-      reviews_count: 29,
-      stock_quantity: 90,
-    },
-  ];
+  });
 
   const visibleProducts = allProducts.slice(0, visibleCount);
   const hasMore = visibleCount < allProducts.length;
@@ -151,6 +32,32 @@ const AllProducts = () => {
   const handleAddToCart = (productId: string) => {
     console.log("Add to cart:", productId);
   };
+
+  if (isLoading) {
+    return (
+      <section className="py-10 md:py-14">
+        <div className="container">
+          <div className="text-center mb-8">
+            <Skeleton className="h-8 w-32 mx-auto" />
+            <Skeleton className="h-4 w-64 mx-auto mt-2" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-square rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (allProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-10 md:py-14">
@@ -168,7 +75,13 @@ const AllProducts = () => {
           {visibleProducts.map((product) => (
             <ProductCard
               key={product.id}
-              {...product}
+              id={product.id}
+              name_bn={product.name_bn}
+              slug={product.slug}
+              image_url={product.images?.[0] || ''}
+              base_price={product.base_price}
+              sale_price={product.sale_price}
+              stock_quantity={product.stock_quantity}
               onAddToCart={() => handleAddToCart(product.id)}
             />
           ))}
