@@ -1,7 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { CheckCircle, Package, Download, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useInvoiceDownload } from "@/hooks/useInvoiceDownload";
@@ -12,7 +11,6 @@ const OrderConfirmation = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={0} />
 
       <main className="flex-1 py-12">

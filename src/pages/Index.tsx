@@ -1,4 +1,3 @@
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroBanner from "@/components/home/HeroBanner";
@@ -14,7 +13,6 @@ import MoneyBackGuarantee from "@/components/home/MoneyBackGuarantee";
 const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={0} />
       
       <main className="flex-1">

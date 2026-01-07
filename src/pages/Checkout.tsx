@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useUddoktaPay } from "@/hooks/useUddoktaPay";
 import { useIncompleteOrder } from "@/hooks/useIncompleteOrder";
 import { supabase } from "@/integrations/supabase/client";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -335,7 +334,6 @@ const Checkout = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <TopNotificationBar />
         <Header cartCount={0} />
         <main className="flex-1 flex items-center justify-center py-12">
           <div className="text-center space-y-4">
@@ -352,7 +350,6 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 py-8">

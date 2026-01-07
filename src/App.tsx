@@ -14,6 +14,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import OrderTracking from "./pages/OrderTracking";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
@@ -32,6 +33,7 @@ import AdminBanners from "./pages/admin/Banners";
 import AdminSettings from "./pages/admin/Settings";
 import AdminChat from "./pages/admin/Chat";
 import AdminIncompleteOrders from "./pages/admin/IncompleteOrders";
+import AdminRecoveryAnalytics from "./pages/admin/RecoveryAnalytics";
 import LiveChatWidget from "./components/chat/LiveChatWidget";
 
 const queryClient = new QueryClient();
@@ -60,8 +62,8 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-confirmation/:orderNumber" element={<OrderConfirmation />} />
+              <Route path="/track-order" element={<OrderTracking />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
-              <Route path="/auth" element={<Auth />} />
               <Route path="/account" element={<Account />} />
 
               {/* Admin Routes */}
@@ -77,6 +79,7 @@ const App = () => (
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="chat" element={<AdminChat />} />
                 <Route path="incomplete-orders" element={<AdminIncompleteOrders />} />
+                <Route path="recovery-analytics" element={<AdminRecoveryAnalytics />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/home/ProductCard";
@@ -132,7 +131,6 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 py-6 md:py-10">

@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -90,7 +89,6 @@ const Account = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 py-8">

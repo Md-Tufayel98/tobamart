@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -25,7 +24,6 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <TopNotificationBar />
         <Header cartCount={0} />
 
         <main className="flex-1 flex items-center justify-center py-12">
@@ -51,7 +49,6 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 py-8">

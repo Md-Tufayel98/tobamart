@@ -10,7 +10,6 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import MiniCartPopup from "@/components/cart/MiniCartPopup";
@@ -197,7 +196,6 @@ const ProductDetail = () => {
   if (productLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <TopNotificationBar />
         <Header cartCount={getItemCount()} />
         <main className="flex-1 py-6">
           <div className="container">
@@ -220,7 +218,6 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col">
-        <TopNotificationBar />
         <Header cartCount={getItemCount()} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -307,7 +304,6 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 py-6">

@@ -17,6 +17,7 @@ import {
   Leaf,
   ChevronRight,
   AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +32,7 @@ const AdminLayout = () => {
     { icon: LayoutDashboard, label: "ড্যাশবোর্ড", href: "/admin" },
     { icon: ShoppingCart, label: "অর্ডার", href: "/admin/orders" },
     { icon: AlertCircle, label: "অসম্পূর্ণ অর্ডার", href: "/admin/incomplete-orders" },
+    { icon: TrendingUp, label: "রিকভারি অ্যানালিটিক্স", href: "/admin/recovery-analytics" },
     { icon: Package, label: "পণ্য", href: "/admin/products" },
     { icon: FolderTree, label: "ক্যাটাগরি", href: "/admin/categories" },
     { icon: Users, label: "কাস্টমার", href: "/admin/customers" },

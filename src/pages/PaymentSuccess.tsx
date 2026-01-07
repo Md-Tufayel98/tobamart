@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useUddoktaPay } from "@/hooks/useUddoktaPay";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
-import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { trackPurchase } from "@/lib/facebook-pixel";
@@ -135,7 +134,6 @@ const PaymentSuccess = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNotificationBar />
       <Header cartCount={getItemCount()} />
 
       <main className="flex-1 flex items-center justify-center py-12">
