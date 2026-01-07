@@ -532,7 +532,7 @@ const AdminIncompleteOrders = () => {
       <OrderDialog
         open={convertDialogOpen}
         onOpenChange={handleOrderDialogClose}
-        order={orderToConvert ? getConversionOrderData(orderToConvert) : null}
+        prefilledData={orderToConvert ? getConversionOrderData(orderToConvert) : undefined}
         incompleteOrderId={orderToConvert?.id}
       />
     </div>

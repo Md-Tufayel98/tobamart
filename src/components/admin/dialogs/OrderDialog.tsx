@@ -27,14 +27,27 @@ type OrderStatus = Database["public"]["Enums"]["order_status"];
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 
+interface PrefilledOrderData {
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  shipping_address?: string;
+  shipping_city?: string;
+  shipping_area?: string;
+  delivery_zone_id?: string | null;
+  order_items?: { product_id: string; product_name: string; quantity: number; unit_price: number; total_price: number; variant_name?: string | null }[];
+  subtotal?: number;
+}
+
 interface OrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   order?: any;
   incompleteOrderId?: string;
+  prefilledData?: PrefilledOrderData;
 }
 
-export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId }: OrderDialogProps) => {
+export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId, prefilledData }: OrderDialogProps) => {
   const queryClient = useQueryClient();
   const { data: products } = useProducts();
   const { data: deliveryZones } = useDeliveryZones();
@@ -58,6 +71,7 @@ export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId }: Or
 
   useEffect(() => {
     if (order) {
+      // Editing existing order
       setForm({
         customer_name: order.customer_name || "",
         customer_phone: order.customer_phone || "",
@@ -71,7 +85,34 @@ export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId }: Or
         order_status: order.order_status || "pending",
         notes: order.notes || "",
       });
+    } else if (prefilledData) {
+      // New order with prefilled data (from incomplete order conversion)
+      setForm({
+        customer_name: prefilledData.customer_name || "",
+        customer_phone: prefilledData.customer_phone || "",
+        customer_email: prefilledData.customer_email || "",
+        shipping_address: prefilledData.shipping_address || "",
+        shipping_city: prefilledData.shipping_city || "",
+        shipping_area: prefilledData.shipping_area || "",
+        delivery_zone_id: prefilledData.delivery_zone_id || "",
+        payment_method: "cod",
+        payment_status: "unpaid",
+        order_status: "pending",
+        notes: "",
+      });
+      // Populate order items from prefilled data
+      if (prefilledData.order_items && prefilledData.order_items.length > 0) {
+        setOrderItems(prefilledData.order_items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.unit_price,
+          name: item.product_name,
+        })));
+      } else {
+        setOrderItems([]);
+      }
     } else {
+      // New empty order
       setForm({
         customer_name: "",
         customer_phone: "",
@@ -87,7 +128,7 @@ export const OrderDialog = ({ open, onOpenChange, order, incompleteOrderId }: Or
       });
       setOrderItems([]);
     }
-  }, [order, open]);
+  }, [order, prefilledData, open]);
 
   const addItem = () => {
     setOrderItems([...orderItems, { product_id: "", quantity: 1, price: 0, name: "" }]);
