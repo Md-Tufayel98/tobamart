@@ -14,6 +14,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUddoktaPay } from "@/hooks/useUddoktaPay";
+import { useIncompleteOrder } from "@/hooks/useIncompleteOrder";
 import { supabase } from "@/integrations/supabase/client";
 import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
@@ -45,7 +46,7 @@ const Checkout = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { createCharge, isLoading: paymentLoading } = useUddoktaPay("client");
-  
+  const { saveIncompleteOrder, markAsConverted } = useIncompleteOrder();
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("cod");
   const [couponCode, setCouponCode] = useState("");
@@ -62,6 +63,21 @@ const Checkout = () => {
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  const watchedFields = watch();
+
+  // Track incomplete orders in real-time
+  useEffect(() => {
+    saveIncompleteOrder({
+      fullName: watchedFields.fullName,
+      phone: watchedFields.phone,
+      email: watchedFields.email,
+      address: watchedFields.address,
+      city: watchedFields.city,
+      area: watchedFields.area,
+      notes: watchedFields.notes,
+    }, selectedZone);
+  }, [watchedFields.fullName, watchedFields.phone, watchedFields.email, watchedFields.address, watchedFields.city, watchedFields.area, watchedFields.notes, selectedZone, saveIncompleteOrder]);
 
   // Fetch delivery zones from database
   const { data: deliveryZones = [] } = useQuery({
@@ -270,7 +286,8 @@ const Checkout = () => {
         );
       }
 
-      // Clear cart and redirect to confirmation
+      // Mark incomplete order as converted and clear cart
+      await markAsConverted();
       clearCart();
       
       toast({

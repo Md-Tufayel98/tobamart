@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import TopNotificationBar from "@/components/layout/TopNotificationBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { useInvoiceDownload } from "@/hooks/useInvoiceDownload";
 
 const OrderConfirmation = () => {
   const { orderNumber } = useParams();
+  const { downloadInvoice } = useInvoiceDownload();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -66,7 +68,11 @@ const OrderConfirmation = () => {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button variant="outline" className="gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => orderNumber && downloadInvoice(orderNumber)}
+              >
                 <Download className="h-4 w-4" />
                 ইনভয়েস ডাউনলোড
               </Button>

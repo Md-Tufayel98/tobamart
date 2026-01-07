@@ -30,6 +30,8 @@ import AdminDeliveryZones from "./pages/admin/DeliveryZones";
 import AdminBanners from "./pages/admin/Banners";
 import AdminSettings from "./pages/admin/Settings";
 import AdminChat from "./pages/admin/Chat";
+import AdminIncompleteOrders from "./pages/admin/IncompleteOrders";
+import LiveChatWidget from "./components/chat/LiveChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -66,10 +68,12 @@ const App = () => (
                 <Route path="banners" element={<AdminBanners />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="chat" element={<AdminChat />} />
+                <Route path="incomplete-orders" element={<AdminIncompleteOrders />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <LiveChatWidget />
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>
