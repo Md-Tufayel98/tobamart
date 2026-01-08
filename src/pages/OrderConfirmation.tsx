@@ -92,11 +92,26 @@ const OrderConfirmation = () => {
   };
 
   const steps = [
-    { key: "pending", label: "অর্ডার করা হয়েছে", icon: CheckCircle },
+    { key: "pending", label: "অর্ডার গৃহীত", icon: CheckCircle },
+    { key: "confirmed", label: "নিশ্চিত", icon: CheckCircle },
     { key: "processing", label: "প্রসেসিং", icon: Package },
-    { key: "shipped", label: "শিপ করা হয়েছে", icon: Truck },
+    { key: "shipped", label: "শিপড", icon: Truck },
     { key: "delivered", label: "ডেলিভারি", icon: MapPin },
   ];
+
+  const getStatusStep = (status: string): number => {
+    const statusMap: Record<string, number> = {
+      pending: 0,
+      confirmed: 1,
+      processing: 2,
+      shipped: 3,
+      delivered: 4,
+    };
+    return statusMap[status] ?? 0;
+  };
+
+  const currentStep = order ? getStatusStep(order.order_status) : 0;
+  const progressWidth = order ? `${(currentStep / (steps.length - 1)) * 100}%` : "0%";
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
@@ -157,13 +172,17 @@ const OrderConfirmation = () => {
           <Card className="mb-6">
             <CardContent className="py-6">
               <h3 className="font-semibold text-foreground mb-6 text-center">অর্ডার স্ট্যাটাস</h3>
-              <div className="flex items-center justify-between max-w-md mx-auto relative">
+              <div className="flex items-center justify-between max-w-lg mx-auto relative">
                 {/* Progress Line */}
                 <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted" />
-                <div className="absolute top-5 left-0 h-0.5 bg-primary transition-all" style={{ width: "0%" }} />
+                <div 
+                  className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-500" 
+                  style={{ width: progressWidth }} 
+                />
                 
                 {steps.map((step, idx) => {
-                  const isCompleted = idx === 0;
+                  const isCompleted = idx <= currentStep;
+                  const isCurrent = idx === currentStep;
                   const Icon = step.icon;
                   return (
                     <div key={step.key} className="flex flex-col items-center relative z-10">
@@ -172,11 +191,11 @@ const OrderConfirmation = () => {
                           isCompleted
                             ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                             : "bg-muted text-muted-foreground"
-                        }`}
+                        } ${isCurrent ? "ring-2 ring-primary ring-offset-2" : ""}`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
-                      <span className={`text-xs mt-2 text-center max-w-[70px] ${isCompleted ? "font-medium text-primary" : "text-muted-foreground"}`}>
+                      <span className={`text-xs mt-2 text-center max-w-[60px] ${isCompleted ? "font-medium text-primary" : "text-muted-foreground"}`}>
                         {step.label}
                       </span>
                     </div>

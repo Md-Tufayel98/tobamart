@@ -18,8 +18,26 @@ const PaymentSuccess = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [paymentData, setPaymentData] = useState<any>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   const invoiceId = searchParams.get("invoice_id");
+
+  // Auto-redirect countdown after successful payment
+  useEffect(() => {
+    if (status === "success" && orderNumber) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            navigate(`/order-confirmation/${orderNumber}`);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [status, orderNumber, navigate]);
 
   useEffect(() => {
     const verifyAndComplete = async () => {
@@ -165,8 +183,11 @@ const PaymentSuccess = () => {
                 <h1 className="text-2xl font-bold text-foreground mb-2">
                   পেমেন্ট সফল হয়েছে!
                 </h1>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-muted-foreground mb-2">
                   আপনার অর্ডার নিশ্চিত করা হয়েছে
+                </p>
+                <p className="text-sm text-primary font-medium mb-4">
+                  {countdown} সেকেন্ডে অর্ডার পেজে নিয়ে যাওয়া হবে...
                 </p>
                 
                 {orderNumber && (

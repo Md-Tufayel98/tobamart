@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, Phone, Leaf } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, Phone, Leaf, PackageSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +34,7 @@ const Header = ({ cartCount = 0 }: HeaderProps) => {
     { name: "সকল পণ্য", href: "/shop" },
     { name: "আমাদের সম্পর্কে", href: "/about" },
     { name: "যোগাযোগ", href: "/contact" },
+    { name: "অর্ডার ট্র্যাক", href: "/track-order", icon: PackageSearch },
   ];
 
   return (
