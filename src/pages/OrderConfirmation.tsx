@@ -48,6 +48,9 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Add # prefix if not present for database query
+  const orderNumberWithHash = orderNumber?.startsWith('#') ? orderNumber : `#${orderNumber}`;
+
   useEffect(() => {
     const fetchOrder = async () => {
       if (!orderNumber) return;
@@ -61,7 +64,7 @@ const OrderConfirmation = () => {
           discount_amount, total_amount, created_at, notes,
           order_items (product_name, variant_name, quantity, unit_price, total_price)
         `)
-        .eq("order_number", orderNumber)
+        .eq("order_number", orderNumberWithHash)
         .maybeSingle();
 
       if (!error && data) {
@@ -140,7 +143,7 @@ const OrderConfirmation = () => {
                   <p className="text-sm text-muted-foreground mb-1">অর্ডার নম্বর</p>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl md:text-3xl font-bold text-primary font-mono">
-                      {orderNumber}
+                      {orderNumberWithHash}
                     </span>
                     <Button variant="ghost" size="icon" onClick={copyOrderNumber}>
                       {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}

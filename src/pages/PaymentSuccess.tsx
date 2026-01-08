@@ -29,7 +29,7 @@ const PaymentSuccess = () => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            navigate(`/order-confirmation/${orderNumber}`);
+            navigate(`/order-confirmation/${orderNumber.replace('#', '')}`);
             return 0;
           }
           return prev - 1;
@@ -220,7 +220,7 @@ const PaymentSuccess = () => {
                     কেনাকাটা চালিয়ে যান
                   </Button>
                   {orderNumber && (
-                    <Link to={`/order-confirmation/${orderNumber}`}>
+                    <Link to={`/order-confirmation/${orderNumber.replace('#', '')}`}>
                       <Button variant="outline" className="w-full">
                         অর্ডার বিস্তারিত দেখুন
                         <ArrowRight className="h-4 w-4 ml-2" />
