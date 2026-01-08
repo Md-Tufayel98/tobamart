@@ -34,6 +34,9 @@ export const useInvoiceDownload = () => {
   const { toast } = useToast();
 
   const fetchOrderWithItems = useCallback(async (orderNumber: string): Promise<Order | null> => {
+    // Add # prefix if not present for database query
+    const orderNumberWithHash = orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`;
+    
     const { data: order, error } = await supabase
       .from("orders")
       .select(`
@@ -46,8 +49,8 @@ export const useInvoiceDownload = () => {
           total_price
         )
       `)
-      .eq("order_number", orderNumber)
-      .single();
+      .eq("order_number", orderNumberWithHash)
+      .maybeSingle();
 
     if (error || !order) {
       toast({
