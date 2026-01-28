@@ -1,5 +1,8 @@
+"use client";
+
 import { useState } from "react";
-import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -43,9 +46,9 @@ interface MenuGroup {
 
 type MenuItemOrGroup = MenuItem | MenuGroup;
 
-const AdminLayout = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const { user, isAdmin, signOut, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<string[]>(["অর্ডার", "পণ্য"]);
@@ -103,15 +106,15 @@ const AdminLayout = () => {
 
   // Auth check
   if (!user || !isAdmin) {
-    navigate("/auth");
+    router.push("/auth");
     return null;
   }
 
   const isActive = (href: string) => {
     if (href === "/admin") {
-      return location.pathname === "/admin";
+      return pathname === "/admin";
     }
-    return location.pathname === href || location.pathname.startsWith(href + "/");
+    return pathname === href || pathname?.startsWith(href + "/");
   };
 
   const isGroupActive = (group: MenuGroup) => {
@@ -126,7 +129,7 @@ const AdminLayout = () => {
   const renderMenuItem = (item: MenuItem, isChild = false) => (
     <Link
       key={item.href}
-      to={item.href}
+      href={item.href}
       onClick={() => setSidebarOpen(false)}
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -155,7 +158,7 @@ const AdminLayout = () => {
           <div className="flex items-center">
             {group.href ? (
               <Link
-                to={group.href}
+                href={group.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   "flex-1 flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -210,7 +213,7 @@ const AdminLayout = () => {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Link to="/admin" className="flex items-center gap-2">
+          <Link href="/admin" className="flex items-center gap-2">
             <Leaf className="h-5 w-5 text-primary" />
             <span className="font-bold text-primary">অ্যাডমিন</span>
           </Link>
@@ -237,7 +240,7 @@ const AdminLayout = () => {
             {/* Logo */}
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
-                <Link to="/admin" className="flex items-center gap-2">
+                <Link href="/admin" className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full gradient-organic flex items-center justify-center">
                     <Leaf className="h-5 w-5 text-primary-foreground" />
                   </div>
@@ -264,7 +267,7 @@ const AdminLayout = () => {
 
             {/* Footer */}
             <div className="p-4 border-t border-border space-y-2">
-              <Link to="/">
+              <Link href="/">
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <ChevronRight className="h-4 w-4 rotate-180" />
                   স্টোরে ফিরে যান
@@ -275,7 +278,7 @@ const AdminLayout = () => {
                 className="w-full justify-start gap-2 text-destructive hover:text-destructive"
                 onClick={() => {
                   signOut();
-                  navigate("/");
+                  router.push("/");
                 }}
               >
                 <LogOut className="h-4 w-4" />
@@ -287,7 +290,7 @@ const AdminLayout = () => {
 
         {/* Main Content */}
         <main className="flex-1 min-h-screen lg:min-h-[calc(100vh)] p-4 lg:p-8">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

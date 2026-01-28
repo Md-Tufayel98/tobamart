@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { Link, useSearchParams, useParams } from "react-router-dom";
+import Link from "next/link";
+import { useSearchParams, useParams } from "next/navigation";
 import { Filter, Grid3X3, List, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
