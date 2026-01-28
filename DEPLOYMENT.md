@@ -1,99 +1,56 @@
-# Deployment Guide - TobaMart
+# 🚀 Deployment Guide - TobaMart
 
-এই প্রজেক্ট Next.js 16 দিয়ে তৈরি এবং Vercel-এ deploy করার জন্য প্রস্তুত।
+## ✅ সব Setup সম্পূর্ণ! এখন শুধু Deploy করুন
 
-## ১. Supabase Setup (যদি এখনো না করা থাকে)
-
-### Supabase প্রজেক্ট তৈরি করুন:
-
-1. **Supabase-এ যান**: [https://supabase.com](https://supabase.com)
-2. **নতুন প্রজেক্ট তৈরি করুন**:
-   - Organization select করুন
-   - Project name দিন (উদাহরণ: `tobamart`)
-   - Database password সেট করুন (এটি সেভ করে রাখুন)
-   - Region select করুন (যত কাছে তত ভালো)
-
-3. **Database Schema তৈরি করুন**:
-   - Supabase Dashboard → SQL Editor-এ যান
-   - নিচের tables তৈরি করতে SQL রান করুন:
-
-```sql
--- Products table
-CREATE TABLE products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  description TEXT,
-  price DECIMAL(10,2) NOT NULL,
-  image_url TEXT,
-  category TEXT,
-  stock INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Orders table
-CREATE TABLE orders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id),
-  status TEXT DEFAULT 'pending',
-  total_amount DECIMAL(10,2),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Order items table
-CREATE TABLE order_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id),
-  quantity INTEGER NOT NULL,
-  price DECIMAL(10,2) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable Row Level Security
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
-
--- Policies for products (public read)
-CREATE POLICY "Products are viewable by everyone" 
-ON products FOR SELECT 
-USING (true);
-
--- Policies for orders (user can only see their own)
-CREATE POLICY "Users can view their own orders" 
-ON orders FOR SELECT 
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can create their own orders" 
-ON orders FOR INSERT 
-WITH CHECK (auth.uid() = user_id);
-
--- Policies for order_items
-CREATE POLICY "Users can view their own order items" 
-ON order_items FOR SELECT 
-USING (EXISTS (
-  SELECT 1 FROM orders 
-  WHERE orders.id = order_items.order_id 
-  AND orders.user_id = auth.uid()
-));
-```
-
-4. **API Keys নিন**:
-   - Dashboard → Settings → API-এ যান
-   - `Project URL` কপি করুন
-   - `anon` `public` key কপি করুন
+আপনার প্রজেক্ট সম্পূর্ণভাবে প্রস্তুত:
+- ✅ React থেকে Next.js 16-এ কনভার্ট সম্পূর্ণ
+- ✅ Supabase database সম্পূর্ণভাবে configured
+- ✅ সব tables তৈরি (profiles, categories, products, orders, addresses, user_roles, chat_messages, etc.)
+- ✅ Row Level Security policies সেটআপ
+- ✅ Categories এবং product data seeded
+- ✅ Environment variables configured (.env.local তৈরি)
 
 ---
 
-## ২. Environment Variables Setup
+## 🎯 এখন যা করতে হবে
 
-### Local Development (.env.local তৈরি করুন):
+### ১. Supabase Setup (ইতিমধ্যে সম্পূর্ণ - শুধু confirm করুন)
+
+**আপনার Supabase database ইতিমধ্যে সেটআপ হয়ে গেছে:**
+- ✅ Project: wajtjamrkxonrvgtquer.supabase.co
+- ✅ সব tables তৈরি হয়ে গেছে
+- ✅ Categories seeded (Honey, Ghee, Oil, Dates, Nuts, Masala)
+
+**Database Tables:**
+
+- ✅ profiles (user profiles)
+- ✅ categories (product categories)
+- ✅ products (products with variants)
+- ✅ product_variants (weight/size options)
+- ✅ orders (customer orders)
+- ✅ order_items (order line items)
+- ✅ addresses (shipping addresses)
+- ✅ user_roles (admin/staff permissions)
+- ✅ chat_messages (live chat)
+- ✅ chat_sessions (chat sessions)
+
+**কোন SQL run করার দরকার নেই - সব কিছু ready!**
+
+---
+
+## ২. Environment Variables (✅ ইতিমধ্যে সেটআপ)
+
+আপনার `.env.local` ফাইল ইতিমধ্যে তৈরি হয়ে গেছে সঠিক credentials সহ:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=https://wajtjamrkxonrvgtquer.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_gPF-DEoFhDBsPLxRysddwQ_XdONJVn3
+```
+
+**Local test করতে চাইলে:**
+```bash
+npm install
+npm run dev
 ```
 
 ---
