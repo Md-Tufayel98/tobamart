@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/src/components/ui/toaster";
-import { Toaster as Sonner } from "@/src/components/ui/sonner";
-import { TooltipProvider } from "@/src/components/ui/tooltip";
-import { CartProvider } from "@/src/contexts/CartContext";
-import { AuthProvider } from "@/src/contexts/AuthContext";
-import LiveChatWidget from "@/src/components/chat/LiveChatWidget";
 import Script from "next/script";
 import Providers from "./providers";
 
@@ -21,25 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lovable App",
-  description: "Lovable Generated Project",
-  authors: [{ name: "Lovable" }],
-  openGraph: {
-    type: "website",
-    images: "https://lovable.dev/opengraph-image-p98pqg.png",
-    title: "Lovable App",
-    description: "Lovable Generated Project",
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@Lovable",
-    images: "https://lovable.dev/opengraph-image-p98pqg.png",
-    title: "Lovable App",
-    description: "Lovable Generated Project",
-  },
-  icons: {
-    icon: "https://storage.googleapis.com/gpt-engineer-file-uploads/Z1jpMvofgWN4lrKx2PaFFzkbsZF2/uploads/1768152864726-personal image.webp",
-  },
+  title: "TobaMart - খাঁটি প্রাকৃতিক পণ্যের বাজার",
+  description: "বাংলাদেশের সেরা অনলাইন মুদি দোকান - খাঁটি মধু, ঘি, তেল, খেজুর এবং আরও অনেক কিছু",
 };
 
 export default function RootLayout({
@@ -48,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="bn">
       <head>
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`
@@ -73,19 +50,8 @@ export default function RootLayout({
           />
         </noscript>
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Providers>
-          <AuthProvider>
-            <CartProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                {children}
-                <LiveChatWidget />
-              </TooltipProvider>
-            </CartProvider>
-          </AuthProvider>
-        </Providers>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
